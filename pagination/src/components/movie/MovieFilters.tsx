@@ -1,5 +1,5 @@
 import type { MovieQueryType } from "@/utils/type";
-import { useState, useEffect, useCallback } from "react";
+import { useDebouncedParams } from "@/hook/useDebounce";
 
 interface MovieFiltersProps {
   queryParams: MovieQueryType;
@@ -7,43 +7,11 @@ interface MovieFiltersProps {
 }
 
 export default function MovieFilters({ queryParams, onParamsChange }: MovieFiltersProps) {
-  const [searchInput, setSearchInput] = useState(queryParams.search || "");
-
-  // Debounce search với 2 giây
-  const debounceSearch = useCallback(
-    (searchValue: string) => {
-      const timer = setTimeout(() => {
-        onParamsChange({ search: searchValue || undefined, page: 1 });
-      }, 2000);
-      return () => clearTimeout(timer);
-    },
-    [onParamsChange]
+  const { localParams, updateLocalParam, setLocalParams } = useDebouncedParams(
+    queryParams,
+    2000,
+    onParamsChange
   );
-
-  useEffect(() => {
-    const cleanup = debounceSearch(searchInput);
-    return cleanup;
-  }, [searchInput, debounceSearch]);
-
-  const handleDirectorChange = (director: string) => {
-    onParamsChange({ director: director || undefined, page: 1 });
-  };
-
-  const handleNationChange = (nation: string) => {
-    onParamsChange({ nation: nation || undefined, page: 1 });
-  };
-
-  const handleFromDateChange = (fromDate: string) => {
-    onParamsChange({ fromDate: fromDate || undefined, page: 1 });
-  };
-
-  const handleToDateChange = (toDate: string) => {
-    onParamsChange({ toDate: toDate || undefined, page: 1 });
-  };
-
-  const handleTakeChange = (take: number) => {
-    onParamsChange({ take, page: 1 });
-  };
 
   const hasActiveFilters = !!(
     queryParams.search || 
@@ -54,16 +22,17 @@ export default function MovieFilters({ queryParams, onParamsChange }: MovieFilte
   );
 
   const handleClearFilters = () => {
-    setSearchInput("");
-    onParamsChange({
+    setLocalParams({
       search: undefined,
       director: undefined,
       nation: undefined,
       fromDate: undefined,
       toDate: undefined,
-      page: 1
+      page: 1,
+      take: queryParams.take || 10
     });
   };
+
 
   return (
     <div className="space-y-4">
@@ -77,8 +46,8 @@ export default function MovieFilters({ queryParams, onParamsChange }: MovieFilte
             type="text"
             placeholder="Tìm kiếm theo tên phim, đạo diễn, quốc gia... "
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            value={localParams.search || ""}
+            onChange={(e) => updateLocalParam('search', e.target.value)}
           />
         </div>
         {hasActiveFilters && (
@@ -103,8 +72,8 @@ export default function MovieFilters({ queryParams, onParamsChange }: MovieFilte
             type="text"
             placeholder="Nhập tên đạo diễn..."
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.director || ""}
-            onChange={(e) => handleDirectorChange(e.target.value)}
+            value={localParams.director || ""}
+            onChange={(e) => updateLocalParam('director', e.target.value)}
           />
         </div>
 
@@ -116,8 +85,8 @@ export default function MovieFilters({ queryParams, onParamsChange }: MovieFilte
             type="text"
             placeholder="Nhập quốc gia..."
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.nation || ""}
-            onChange={(e) => handleNationChange(e.target.value)}
+            value={localParams.nation || ""}
+            onChange={(e) => updateLocalParam('nation', e.target.value)}
           />
         </div>
 
@@ -128,8 +97,8 @@ export default function MovieFilters({ queryParams, onParamsChange }: MovieFilte
           <input
             type="date"
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.fromDate || ""}
-            onChange={(e) => handleFromDateChange(e.target.value)}
+            value={localParams.fromDate || ""}
+            onChange={(e) => updateLocalParam('fromDate', e.target.value)}
           />
         </div>
 
@@ -140,8 +109,8 @@ export default function MovieFilters({ queryParams, onParamsChange }: MovieFilte
           <input
             type="date"
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.toDate || ""}
-            onChange={(e) => handleToDateChange(e.target.value)}
+            value={localParams.toDate || ""}
+            onChange={(e) => updateLocalParam('toDate', e.target.value)}
           />
         </div>
 
@@ -151,8 +120,8 @@ export default function MovieFilters({ queryParams, onParamsChange }: MovieFilte
           </label>
           <select
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.take || 10}
-            onChange={(e) => handleTakeChange(Number(e.target.value))}
+            value={localParams.take || 10}
+            onChange={(e) => updateLocalParam('take', Number(e.target.value))}
           >
             <option value={10}>10 / trang</option>
             <option value={20}>20 / trang</option>

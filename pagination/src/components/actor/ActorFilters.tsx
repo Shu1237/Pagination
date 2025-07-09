@@ -1,5 +1,5 @@
 import type { ActorQueryType } from "@/utils/type";
-import { useState, useEffect } from "react";
+import { useDebouncedParams } from "@/hook/useDebounce";
 
 interface ActorFiltersProps {
     queryParams: ActorQueryType;
@@ -7,68 +7,29 @@ interface ActorFiltersProps {
 }
 
 export default function ActorFilters({ queryParams, onParamsChange }: ActorFiltersProps) {
-    const [searchValue, setSearchValue] = useState(queryParams.search || "");
-
-    // Debounce search với 2 giây
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            onParamsChange({ search: searchValue || undefined, page: 1 });
-        }, 2000);
-
-        return () => clearTimeout(timer);
-    }, [searchValue, onParamsChange]);
-
-    const handleSearchChange = (value: string) => {
-        setSearchValue(value);
-    };
-
-    const handleNameChange = (name: string) => {
-        onParamsChange({ name: name || undefined, page: 1 });
-    };
-
-    const handleStageNameChange = (stage_name: string) => {
-        onParamsChange({ stage_name: stage_name || undefined, page: 1 });
-    };
-
-    const handleGenderChange = (gender: string) => {
-        onParamsChange({
-            gender: gender || undefined,
-            page: 1
-        });
-    };
-
-    const handleNationalityChange = (nationality: string) => {
-        onParamsChange({
-            nationality: nationality || undefined,
-            page: 1
-        });
-    };
-
-    const handleDateOfBirthChange = (date_of_birth: string) => {
-        onParamsChange({ date_of_birth: date_of_birth || undefined, page: 1 });
-    };
-
-    const handleTakeChange = (take: number) => {
-        onParamsChange({ take, page: 1 });
-    };
+    const { localParams, updateLocalParam, setLocalParams } = useDebouncedParams(
+        queryParams,
+        2000,
+        onParamsChange
+    );
 
     const hasActiveFilters = !!(
         queryParams.search ||
         queryParams.name ||
         queryParams.stage_name ||
-        queryParams.nationality ||
         queryParams.gender ||
+        queryParams.nationality ||
         queryParams.date_of_birth
     );
 
     const handleClearFilters = () => {
-        setSearchValue("");
-        onParamsChange({
+        setLocalParams({
+            ...localParams,
             search: undefined,
             name: undefined,
             stage_name: undefined,
-            nationality: undefined,
             gender: undefined,
+            nationality: undefined,
             date_of_birth: undefined,
             page: 1
         });
@@ -86,8 +47,8 @@ export default function ActorFilters({ queryParams, onParamsChange }: ActorFilte
                         type="text"
                         placeholder="Tìm kiếm theo tên, nghệ danh, quốc tịch..."
                         className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        value={searchValue}
-                        onChange={(e) => handleSearchChange(e.target.value)}
+                        value={localParams.search || ""}
+                        onChange={(e) => updateLocalParam("search", e.target.value)}
                     />
                 </div>
                 {hasActiveFilters && (
@@ -102,7 +63,7 @@ export default function ActorFilters({ queryParams, onParamsChange }: ActorFilte
                 )}
             </div>
 
-          
+            {/* Filters */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 p-4 bg-card rounded-lg border">
                 <div>
                     <label className="block text-sm font-medium text-foreground mb-2">
@@ -112,8 +73,8 @@ export default function ActorFilters({ queryParams, onParamsChange }: ActorFilte
                         type="text"
                         placeholder="Nhập tên thật..."
                         className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        value={queryParams.name || ""}
-                        onChange={(e) => handleNameChange(e.target.value)}
+                        value={localParams.name || ""}
+                        onChange={(e) => updateLocalParam("name", e.target.value)}
                     />
                 </div>
 
@@ -125,8 +86,8 @@ export default function ActorFilters({ queryParams, onParamsChange }: ActorFilte
                         type="text"
                         placeholder="Nhập nghệ danh..."
                         className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        value={queryParams.stage_name || ""}
-                        onChange={(e) => handleStageNameChange(e.target.value)}
+                        value={localParams.stage_name || ""}
+                        onChange={(e) => updateLocalParam("stage_name", e.target.value)}
                     />
                 </div>
 
@@ -138,8 +99,8 @@ export default function ActorFilters({ queryParams, onParamsChange }: ActorFilte
                         type="text"
                         placeholder="Nhập quốc tịch..."
                         className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        value={queryParams.nationality || ""}
-                        onChange={(e) => handleNationalityChange(e.target.value)}
+                        value={localParams.nationality || ""}
+                        onChange={(e) => updateLocalParam("nationality", e.target.value)}
                     />
                 </div>
 
@@ -149,8 +110,8 @@ export default function ActorFilters({ queryParams, onParamsChange }: ActorFilte
                     </label>
                     <select
                         className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        value={queryParams.gender || ""}
-                        onChange={(e) => handleGenderChange(e.target.value)}
+                        value={localParams.gender || ""}
+                        onChange={(e) => updateLocalParam("gender", e.target.value)}
                     >
                         <option value="">Tất cả</option>
                         <option value="male">Nam</option>
@@ -165,8 +126,8 @@ export default function ActorFilters({ queryParams, onParamsChange }: ActorFilte
                     <input
                         type="date"
                         className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        value={queryParams.date_of_birth || ""}
-                        onChange={(e) => handleDateOfBirthChange(e.target.value)}
+                        value={localParams.date_of_birth || ""}
+                        onChange={(e) => updateLocalParam("date_of_birth", e.target.value)}
                     />
                 </div>
 
@@ -176,8 +137,8 @@ export default function ActorFilters({ queryParams, onParamsChange }: ActorFilte
                     </label>
                     <select
                         className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                        value={queryParams.take || 10}
-                        onChange={(e) => handleTakeChange(Number(e.target.value))}
+                        value={localParams.take || 10}
+                        onChange={(e) => updateLocalParam("take", Number(e.target.value))}
                     >
                         <option value={10}>10 / trang</option>
                         <option value={20}>20 / trang</option>
@@ -185,11 +146,6 @@ export default function ActorFilters({ queryParams, onParamsChange }: ActorFilte
                     </select>
                 </div>
             </div>
-
-   
-           
-
-
         </div>
     );
 }

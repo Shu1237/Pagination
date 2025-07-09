@@ -1,5 +1,5 @@
 import type { ScheduleQueryType } from "@/utils/type";
-import { useState, useEffect, useCallback } from "react";
+import { useDebouncedParams } from "@/hook/useDebounce";
 
 interface ScheduleFiltersProps {
   queryParams: ScheduleQueryType;
@@ -7,55 +7,15 @@ interface ScheduleFiltersProps {
 }
 
 export default function ScheduleFilters({ queryParams, onParamsChange }: ScheduleFiltersProps) {
-  const [searchInput, setSearchInput] = useState(queryParams.search || "");
-
-  // Debounce search với 2 giây
-  const debounceSearch = useCallback(
-    (searchValue: string) => {
-      const timer = setTimeout(() => {
-        onParamsChange({ search: searchValue || undefined, page: 1 });
-      }, 2000);
-      return () => clearTimeout(timer);
-    },
-    [onParamsChange]
+  const { localParams, updateLocalParam, setLocalParams } = useDebouncedParams(
+    queryParams,
+    2000,
+    onParamsChange
   );
 
-  useEffect(() => {
-    const cleanup = debounceSearch(searchInput);
-    return cleanup;
-  }, [searchInput, debounceSearch]);
-
-  const handleTakeChange = (take: number) => {
-    onParamsChange({ take, page: 1 });
-  };
-
-  const handleMovieNameChange = (movieName: string) => {
-    onParamsChange({ movieName: movieName || undefined, page: 1 });
-  };
-
-  const handleCinemaRoomNameChange = (cinemaRoomName: string) => {
-    onParamsChange({ cinemaRoomName: cinemaRoomName || undefined, page: 1 });
-  };
-
-  const handleVersionIdChange = (version_id: number | undefined) => {
-    onParamsChange({ version_id, page: 1 });
-  };
-
-  const handleIsDeletedChange = (is_deleted: boolean | undefined) => {
-    onParamsChange({ is_deleted, page: 1 });
-  };
-
-  const handleScheduleStartTimeChange = (scheduleStartTime: string) => {
-    onParamsChange({ scheduleStartTime: scheduleStartTime || undefined, page: 1 });
-  };
-
-  const handleScheduleEndTimeChange = (scheduleEndTime: string) => {
-    onParamsChange({ scheduleEndTime: scheduleEndTime || undefined, page: 1 });
-  };
-
   const hasActiveFilters = !!(
-    queryParams.search || 
-    queryParams.movieName || 
+    queryParams.search ||
+    queryParams.movieName ||
     queryParams.cinemaRoomName ||
     queryParams.version_id !== undefined ||
     queryParams.is_deleted !== undefined ||
@@ -64,8 +24,8 @@ export default function ScheduleFilters({ queryParams, onParamsChange }: Schedul
   );
 
   const handleClearFilters = () => {
-    setSearchInput("");
-    onParamsChange({
+    setLocalParams({
+      ...localParams,
       search: undefined,
       movieName: undefined,
       cinemaRoomName: undefined,
@@ -76,6 +36,7 @@ export default function ScheduleFilters({ queryParams, onParamsChange }: Schedul
       page: 1
     });
   };
+
 
   return (
     <div className="space-y-4">
@@ -89,8 +50,8 @@ export default function ScheduleFilters({ queryParams, onParamsChange }: Schedul
             type="text"
             placeholder="Tìm kiếm theo ID lịch chiếu, tên phim, phòng chiếu... "
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            value={localParams.search || ""}
+            onChange={(e) => updateLocalParam("search", e.target.value)}
           />
         </div>
         {hasActiveFilters && (
@@ -117,8 +78,8 @@ export default function ScheduleFilters({ queryParams, onParamsChange }: Schedul
               type="text"
               placeholder="Lọc theo tên phim"
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={queryParams.movieName || ""}
-              onChange={(e) => handleMovieNameChange(e.target.value)}
+              value={localParams.movieName || ""}
+              onChange={(e) => updateLocalParam("movieName", e.target.value)}
             />
           </div>
 
@@ -130,8 +91,8 @@ export default function ScheduleFilters({ queryParams, onParamsChange }: Schedul
               type="text"
               placeholder="Lọc theo phòng chiếu"
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={queryParams.cinemaRoomName || ""}
-              onChange={(e) => handleCinemaRoomNameChange(e.target.value)}
+              value={localParams.cinemaRoomName || ""}
+              onChange={(e) => updateLocalParam("cinemaRoomName", e.target.value)}
             />
           </div>
 
@@ -141,8 +102,8 @@ export default function ScheduleFilters({ queryParams, onParamsChange }: Schedul
             </label>
             <select
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={queryParams.version_id || ""}
-              onChange={(e) => handleVersionIdChange(e.target.value ? Number(e.target.value) : undefined)}
+              value={localParams.version_id || ""}
+              onChange={(e) => updateLocalParam("version_id", e.target.value ? Number(e.target.value) : undefined)}
             >
               <option value="">Tất cả phiên bản</option>
               <option value="2">2D</option>
@@ -158,10 +119,19 @@ export default function ScheduleFilters({ queryParams, onParamsChange }: Schedul
             </label>
             <select
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={queryParams.is_deleted === undefined ? "all" : queryParams.is_deleted ? "deleted" : "active"}
+              value={
+                localParams.is_deleted === undefined
+                  ? "all"
+                  : localParams.is_deleted === true
+                    ? "deleted"
+                    : "active"
+              }
               onChange={(e) => {
                 const value = e.target.value;
-                handleIsDeletedChange(value === "all" ? undefined : value === "deleted");
+                updateLocalParam("is_deleted",
+                  value === "all" ? undefined :
+                    value === "deleted" ? true : false
+                );
               }}
             >
               <option value="all">Tất cả</option>
@@ -180,8 +150,8 @@ export default function ScheduleFilters({ queryParams, onParamsChange }: Schedul
             <input
               type="datetime-local"
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={queryParams.scheduleStartTime || ""}
-              onChange={(e) => handleScheduleStartTimeChange(e.target.value)}
+              value={localParams.scheduleStartTime || ""}
+              onChange={(e) => updateLocalParam("scheduleStartTime", e.target.value)}
             />
           </div>
 
@@ -192,8 +162,8 @@ export default function ScheduleFilters({ queryParams, onParamsChange }: Schedul
             <input
               type="datetime-local"
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={queryParams.scheduleEndTime || ""}
-              onChange={(e) => handleScheduleEndTimeChange(e.target.value)}
+              value={localParams.scheduleEndTime || ""}
+              onChange={(e) => updateLocalParam("scheduleEndTime", e.target.value)}
             />
           </div>
 
@@ -203,8 +173,8 @@ export default function ScheduleFilters({ queryParams, onParamsChange }: Schedul
             </label>
             <select
               className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-              value={queryParams.take || 10}
-              onChange={(e) => handleTakeChange(Number(e.target.value))}
+              value={localParams.take || 10}
+              onChange={(e) => updateLocalParam("take", Number(e.target.value))}
             >
               <option value={10}>10 / trang</option>
               <option value={20}>20 / trang</option>

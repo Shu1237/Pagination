@@ -1,5 +1,5 @@
 import type { OrderQueryType } from "@/utils/type";
-import { useState, useEffect, useCallback } from "react";
+import { useDebouncedParams } from "@/hook/useDebounce";
 
 interface OrderFiltersProps {
   queryParams: OrderQueryType;
@@ -7,47 +7,11 @@ interface OrderFiltersProps {
 }
 
 export default function OrderFilters({ queryParams, onParamsChange }: OrderFiltersProps) {
-  const [searchInput, setSearchInput] = useState(queryParams.search || "");
-
-  // Debounce search với 2 giây
-  const debounceSearch = useCallback(
-    (searchValue: string) => {
-      const timer = setTimeout(() => {
-        onParamsChange({ search: searchValue || undefined, page: 1 });
-      }, 2000);
-      return () => clearTimeout(timer);
-    },
-    [onParamsChange]
+  const { localParams, updateLocalParam, setLocalParams } = useDebouncedParams(
+    queryParams,
+    2000,
+    onParamsChange
   );
-
-  useEffect(() => {
-    const cleanup = debounceSearch(searchInput);
-    return cleanup;
-  }, [searchInput, debounceSearch]);
-
-  const handleTakeChange = (take: number) => {
-    onParamsChange({ take, page: 1 });
-  };
-
-  const handleStatusChange = (status: string) => {
-    onParamsChange({ status: status || undefined, page: 1 });
-  };
-
-  const handleEmailChange = (email: string) => {
-    onParamsChange({ email: email || undefined, page: 1 });
-  };
-
-  const handlePaymentMethodChange = (paymentMethod: string) => {
-    onParamsChange({ paymentMethod: paymentMethod || undefined, page: 1 });
-  };
-
-  const handleStartDateChange = (startDate: string) => {
-    onParamsChange({ startDate: startDate || undefined, page: 1 });
-  };
-
-  const handleEndDateChange = (endDate: string) => {
-    onParamsChange({ endDate: endDate || undefined, page: 1 });
-  };
 
   const hasActiveFilters = !!(
     queryParams.search || 
@@ -59,8 +23,8 @@ export default function OrderFilters({ queryParams, onParamsChange }: OrderFilte
   );
 
   const handleClearFilters = () => {
-    setSearchInput("");
-    onParamsChange({
+    setLocalParams({
+      ...localParams,
       search: undefined,
       status: undefined,
       email: undefined,
@@ -83,8 +47,8 @@ export default function OrderFilters({ queryParams, onParamsChange }: OrderFilte
             type="text"
             placeholder="Tìm theo tên user hoặc tên phim... "
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            value={localParams.search || ""}
+            onChange={(e) => updateLocalParam("search", e.target.value)}
           />
         </div>
         {hasActiveFilters && (
@@ -107,8 +71,8 @@ export default function OrderFilters({ queryParams, onParamsChange }: OrderFilte
           </label>
           <select
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.status || ""}
-            onChange={(e) => handleStatusChange(e.target.value)}
+            value={localParams.status || ""}
+            onChange={(e) => updateLocalParam("status", e.target.value)}
           >
             <option value="">Tất cả trạng thái</option>
             <option value="pending">Chờ xử lý</option>
@@ -125,8 +89,8 @@ export default function OrderFilters({ queryParams, onParamsChange }: OrderFilte
             type="email"
             placeholder="Tìm theo email..."
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.email || ""}
-            onChange={(e) => handleEmailChange(e.target.value)}
+            value={localParams.email || ""}
+            onChange={(e) => updateLocalParam("email", e.target.value)}
           />
         </div>
 
@@ -134,7 +98,7 @@ export default function OrderFilters({ queryParams, onParamsChange }: OrderFilte
           <label className="block text-sm font-medium text-foreground mb-2">
             Phương thức thanh toán
           </label>
-           <select className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring" value={queryParams.paymentMethod || ""} onChange={(e) => handlePaymentMethodChange(e.target.value)}>
+           <select className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring" value={localParams.paymentMethod || ""} onChange={(e) => updateLocalParam("paymentMethod", e.target.value)}>
             <option value="">Tất cả phương thức</option>
             <option value="momo">Momo</option>
             <option value="paypal">PayPal</option>
@@ -151,8 +115,8 @@ export default function OrderFilters({ queryParams, onParamsChange }: OrderFilte
           <input
             type="date"
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.startDate || ""}
-            onChange={(e) => handleStartDateChange(e.target.value)}
+            value={localParams.startDate || ""}
+            onChange={(e) => updateLocalParam("startDate", e.target.value)}
           />
         </div>
 
@@ -163,8 +127,8 @@ export default function OrderFilters({ queryParams, onParamsChange }: OrderFilte
           <input
             type="date"
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.endDate || ""}
-            onChange={(e) => handleEndDateChange(e.target.value)}
+            value={localParams.endDate || ""}
+            onChange={(e) => updateLocalParam("endDate", e.target.value)}
           />
         </div>
 
@@ -174,8 +138,8 @@ export default function OrderFilters({ queryParams, onParamsChange }: OrderFilte
           </label>
           <select
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.take || 10}
-            onChange={(e) => handleTakeChange(Number(e.target.value))}
+            value={localParams.take || 10}
+            onChange={(e) => updateLocalParam("take", Number(e.target.value))}
           >
             <option value={10}>10 / trang</option>
             <option value={20}>20 / trang</option>

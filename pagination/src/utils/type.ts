@@ -59,7 +59,7 @@ export type Version = {
 export type ScheduleResponse = {
     id: number;
     is_deleted: boolean;
-    cinema_room_id: number;
+    cinemaRoom:CinemaRoom;
     start_movie_time: string;
     end_movie_time: string;
     version: Version;

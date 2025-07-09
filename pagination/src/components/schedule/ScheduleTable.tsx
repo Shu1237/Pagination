@@ -96,7 +96,6 @@ export default function ScheduleTable({ schedules, onSort, currentSortBy, curren
             const startTime = new Date(schedule.start_movie_time);
             const endTime = new Date(schedule.end_movie_time);
             const duration = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60)); // minutes
-            
             return (
               <TableRow key={schedule.id}>
                 <TableCell className="font-medium">{schedule.id}</TableCell>
@@ -107,7 +106,7 @@ export default function ScheduleTable({ schedules, onSort, currentSortBy, curren
                 </TableCell>
                 <TableCell>
                   <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                    Phòng {schedule.cinema_room_id}
+                    {schedule.cinemaRoom?.name || 'N/A'}
                   </span>
                 </TableCell>
                 <TableCell>

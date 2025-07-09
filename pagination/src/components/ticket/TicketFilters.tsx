@@ -1,5 +1,5 @@
 import type { TicketQueryType } from "@/utils/type";
-import { useState, useEffect, useCallback } from "react";
+import { useDebouncedParams } from "@/hook/useDebounce";
 
 interface TicketFiltersProps {
   queryParams: TicketQueryType;
@@ -7,43 +7,11 @@ interface TicketFiltersProps {
 }
 
 export default function TicketFilters({ queryParams, onParamsChange }: TicketFiltersProps) {
-  const [searchInput, setSearchInput] = useState(queryParams.search || "");
-
-  // Debounce search với 2 giây
-  const debounceSearch = useCallback(
-    (searchValue: string) => {
-      const timer = setTimeout(() => {
-        onParamsChange({ search: searchValue || undefined, page: 1 });
-      }, 2000);
-      return () => clearTimeout(timer);
-    },
-    [onParamsChange]
+  const { localParams, updateLocalParam, setLocalParams } = useDebouncedParams(
+    queryParams,
+    2000,
+    onParamsChange
   );
-
-  useEffect(() => {
-    const cleanup = debounceSearch(searchInput);
-    return cleanup;
-  }, [searchInput, debounceSearch]);
-
-  const handleTakeChange = (take: number) => {
-    onParamsChange({ take, page: 1 });
-  };
-
-  const handleActiveChange = (active: boolean | undefined) => {
-    onParamsChange({ active, page: 1 });
-  };
-
-  const handleIsUsedChange = (is_used: boolean | undefined) => {
-    onParamsChange({ is_used, page: 1 });
-  };
-
-  const handleStartDateChange = (startDate: string) => {
-    onParamsChange({ startDate: startDate || undefined, page: 1 });
-  };
-
-  const handleEndDateChange = (endDate: string) => {
-    onParamsChange({ endDate: endDate || undefined, page: 1 });
-  };
 
   const hasActiveFilters = !!(
     queryParams.search || 
@@ -54,8 +22,8 @@ export default function TicketFilters({ queryParams, onParamsChange }: TicketFil
   );
 
   const handleClearFilters = () => {
-    setSearchInput("");
-    onParamsChange({
+    setLocalParams({
+      ...localParams,
       search: undefined,
       active: undefined,
       is_used: undefined,
@@ -77,8 +45,8 @@ export default function TicketFilters({ queryParams, onParamsChange }: TicketFil
             type="text"
             placeholder="Tìm kiếm theo tên phim, loại ghế, phòng chiếu, loại vé, phiên bản... "
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
+            value={localParams.search || ""}
+            onChange={(e) => updateLocalParam("search", e.target.value)}
           />
         </div>
         {hasActiveFilters && (
@@ -101,10 +69,19 @@ export default function TicketFilters({ queryParams, onParamsChange }: TicketFil
           </label>
           <select
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.active === undefined ? "all" : queryParams.active ? "active" : "inactive"}
+            value={
+              localParams.active === undefined 
+                ? "all" 
+                : localParams.active === true 
+                  ? "active" 
+                  : "inactive"
+            }
             onChange={(e) => {
               const value = e.target.value;
-              handleActiveChange(value === "all" ? undefined : value === "active");
+              updateLocalParam("active", 
+                value === "all" ? undefined : 
+                value === "active" ? true : false
+              );
             }}
           >
             <option value="all">Tất cả</option>
@@ -119,10 +96,19 @@ export default function TicketFilters({ queryParams, onParamsChange }: TicketFil
           </label>
           <select
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.is_used === undefined ? "all" : queryParams.is_used ? "used" : "unused"}
+            value={
+              localParams.is_used === undefined 
+                ? "all" 
+                : localParams.is_used === true 
+                  ? "used" 
+                  : "unused"
+            }
             onChange={(e) => {
               const value = e.target.value;
-              handleIsUsedChange(value === "all" ? undefined : value === "used");
+              updateLocalParam("is_used", 
+                value === "all" ? undefined : 
+                value === "used" ? true : false
+              );
             }}
           >
             <option value="all">Tất cả</option>
@@ -138,8 +124,8 @@ export default function TicketFilters({ queryParams, onParamsChange }: TicketFil
           <input
             type="date"
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.startDate || ""}
-            onChange={(e) => handleStartDateChange(e.target.value)}
+            value={localParams.startDate || ""}
+            onChange={(e) => updateLocalParam("startDate", e.target.value)}
           />
         </div>
 
@@ -150,8 +136,8 @@ export default function TicketFilters({ queryParams, onParamsChange }: TicketFil
           <input
             type="date"
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.endDate || ""}
-            onChange={(e) => handleEndDateChange(e.target.value)}
+            value={localParams.endDate || ""}
+            onChange={(e) => updateLocalParam("endDate", e.target.value)}
           />
         </div>
 
@@ -161,8 +147,8 @@ export default function TicketFilters({ queryParams, onParamsChange }: TicketFil
           </label>
           <select
             className="w-full px-3 py-2 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            value={queryParams.take || 10}
-            onChange={(e) => handleTakeChange(Number(e.target.value))}
+            value={localParams.take || 10}
+            onChange={(e) => updateLocalParam("take", Number(e.target.value))}
           >
             <option value={10}>10 / trang</option>
             <option value={20}>20 / trang</option>
